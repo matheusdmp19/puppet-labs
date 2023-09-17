@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+domain = "matheuspinho.local"
+
+machines = {
+  "puppet-server" => {"memory" => "2048", "cpu" => "2", "ip" => "100", "image" => "ubuntu/bionic64", "domain" => "#{domain}", "puppet-memory" => "1g"},
+  "puppet-agent01" => {"memory" => "1024", "cpu" => "2", "ip" => "101", "image" => "ubuntu/bionic64", "domain" => "#{domain}"},
+  "puppet-agent02" => {"memory" => "1024", "cpu" => "2", "ip" => "102", "image" => "centos/7", "domain" => "#{domain}"}
+}
+
+$script_default = <<-EOF
+echo '10.10.10.#{machines["puppet-server"]["ip"]} puppet-server.#{domain} puppet-server' >> /etc/hosts 
+echo '10.10.10.#{machines["puppet-agent01"]["ip"]} puppet-agent01.#{domain} puppet-agent01' >> /etc/hosts
+echo '10.10.10.#{machines["puppet-agent02"]["ip"]} puppet-agent02.#{domain} puppet-agent02' >> /etc/hosts 
+EOF
+
+Vagrant.configure("2") do |config|
+
+  machines.each do |name, conf|
+    config.vm.define "#{name}" do |machine|
+      machine.vm.box = "#{conf["image"]}"
+      machine.vm.hostname = "#{name}.#{domain}"
+      machine.vm.network "private_network", ip: "10.10.10.#{conf["ip"]}",
+        virtualbox__intnet: "puppetNetwork"
+      machine.vm.provider "virtualbox" do |vb|
+        vb.name = "#{name}"
+        vb.memory = conf["memory"]
+        vb.cpus = conf["cpu"]
+        vb.customize ["modifyvm", :id, "--groups", "/Puppet-Labs"]
+      end
+      machine.vm.provision "shell", inline: $script_default
+      if "#{conf["image"]}" == "ubuntu/bionic64"
+        machine.vm.provision "shell", path: "scripts/ubuntu.sh"
+      end     
+      if "#{conf["image"]}" == "centos/7"
+        machine.vm.provision "shell", path: "scripts/centos.sh"
+      end
+      if "#{name}" == "puppet-server"
+        machine.vm.provision "shell", path: "scripts/master.sh"
+        machine.vm.provision "shell", inline: "sed -i 's/\-Xms.g \-Xmx.g/-Xms#{conf["puppet-memory"]} -Xmx#{conf["puppet-memory"]}/' /etc/default/puppetserver"
+        machine.vm.provision "shell", inline: "systemctl restart puppetserver && systemctl enable puppetserver"
+      end
+      if "#{name}" =~ /.*agent[0-9]?[0-9]?/
+        machine.vm.provision "shell", path: "scripts/agent.sh"
+        machine.vm.provision "shell", inline: "sed -i 's/node\.domain\.com\.br/#{name}.#{conf["domain"]}/' /etc/puppetlabs/puppet/puppet.conf"
+        machine.vm.provision "shell", inline: "sed -i 's/server\.domain\.com\.br/puppet-server.matheuspinho.local/' /etc/puppetlabs/puppet/puppet.conf"
+        machine.vm.provision "shell", inline: "puppet agent -t || puppet resource service puppet ensure=running enable=true"
+      end
+    end
+  end
+end

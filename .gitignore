@@ -1,0 +1,3 @@
+environments/virtualbox/.vagrant
+environments/virtualbox/*.log
+environments/virtualbox/ssh.conf
