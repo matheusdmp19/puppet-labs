@@ -40,8 +40,11 @@ Vagrant.configure("2") do |config|
         machine.vm.provision "shell", path: "scripts/master.sh"
         machine.vm.provision "shell", inline: "sed -i 's/\-Xms.g \-Xmx.g/-Xms#{conf["puppet-memory"]} -Xmx#{conf["puppet-memory"]}/' /etc/default/puppetserver"
         machine.vm.provision "shell", inline: "systemctl restart puppetserver && systemctl enable puppetserver"
+        machine.vm.synced_folder "code/", "/etc/puppetlabs/code/",
+          owner: "root", group: "root"
       end
       if "#{name}" =~ /.*agent[0-9]?[0-9]?/
+        machine.vm.synced_folder "code/", "/etc/puppetlabs/code/", disabled: true
         machine.vm.provision "shell", path: "scripts/agent.sh"
         machine.vm.provision "shell", inline: "sed -i 's/node\.domain\.com\.br/#{name}.#{conf["domain"]}/' /etc/puppetlabs/puppet/puppet.conf"
         machine.vm.provision "shell", inline: "sed -i 's/server\.domain\.com\.br/puppet-server.matheuspinho.local/' /etc/puppetlabs/puppet/puppet.conf"
