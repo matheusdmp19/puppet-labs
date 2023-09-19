@@ -13,8 +13,7 @@ O objetivo desse repositório é ter diversos labotarórios de puppet, utilizand
 
 - Virtualbox instalado;
 - Vagrant instalado;
-- Estar dentro do repositório clonado;
-- Plugin vagrant-vbguest instalado.
+- Estar dentro do repositório clonado.
 
 ### Subir ambiente
 
