@@ -34,7 +34,7 @@ Executar comando remoto na máquina:
 
     vagrant ssh <nome-da-máquina> -c "echo teste"
 
-# Rerências utilizadas
+# Referências utilizadas
 
 ## Puppet:
 
