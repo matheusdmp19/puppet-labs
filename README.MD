@@ -34,6 +34,11 @@ Executar comando remoto na máquina:
 
     vagrant ssh <nome-da-máquina> -c "echo teste"
 
+Exportar configurações ssh para acessar diretamente:
+
+    vagrant ssh-config > ssh.conf
+    ssh -F ssh.conf <nome-da-máquina>
+
 # Referências utilizadas
 
 ## Puppet:

@@ -1,1 +1,5 @@
 baseconfig::params::user_matheus: present
+
+baseconfig::params::linux_users:
+  - joao
+  - paulo
