@@ -1,5 +1,9 @@
-baseconfig::params::user_matheus: present
+baseconfig::params::pkg_ntp: true
 
 baseconfig::params::linux_users:
+  - matheus
+  - deploy
+
+baseconfig::params::linux_users_absent:
   - joao
   - paulo
