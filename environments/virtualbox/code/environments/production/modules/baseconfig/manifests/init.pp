@@ -1,39 +1,36 @@
 # Class baseconfig
 class baseconfig (
   $pkg_ntp = $baseconfig::params::pkg_ntp,
-  $linux_users = $baseconfig::params::linux_users,
-  $linux_users_absent = $baseconfig::params::linux_users_absent,
-  $lista_vazia = $baseconfig::params::lista_vazia
+  $linux_users = $baseconfig::params::linux_users
 ) inherits baseconfig::params{
     notify {'os-name':
       message => "Aplicando alterações no host que utilza o sistema operacional ${::os['name']}."
     }
 
-    $lista_vazia.each |$teste| {
-      user { $teste:
-        ensure     => 'present',
+    $linux_users.each | Data $user | {
+      user { $user['user']['name']:
+        ensure     => $user['user']['ensure'],
         managehome => 'true',
-        home       => "/home/${teste}"
+        home       => "/home/${user['user']['name']}",
+        before     => File["/home/${user['user']['name']}"]
       }
-    }
-
-    $linux_users.each |$user| {
-      user { $user:
-        ensure     => 'present',
-        managehome => 'true',
-        home       => "/home/${user}"
+      if $user['user']['ensure'] == 'present' {
+        $home_dir = 'directory'
       }
-    }
-
-    $linux_users_absent.each |$user| {
-      user { $user:
-        ensure     => 'absent'
+      elsif $user['user']['ensure'] == 'absent' {
+        $home_dir = 'absent'
+      }
+      file { "/home/${user['user']['name']}":
+        ensure  => $home_dir,
+        recurse => true,
+        force   => true
       }
     }
 
     if $pkg_ntp == true {
       notify {'ntp-installed':
-        message => 'ntp package successfully installed'
+        message => 'ntp package installed',
+        require => Service[$service]
       }
       package {'ntp':
         ensure => 'installed'
